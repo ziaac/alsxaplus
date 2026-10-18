@@ -403,6 +403,10 @@ export default function Sim() {
             <div>
               <h1>Before we start</h1>
               <p>
+                ALSxaPlus is made for people whose speech is hard for voice assistants to understand, for example because of ALS (amyotrophic lateral sclerosis), cerebral palsy, Parkinson's disease, a stroke or another
+                condition, now or as their speech changes over time. It does not diagnose anything and it is not a medical device.
+              </p>
+              <p>
                 ALSxaPlus helps when speech is unclear. It keeps the sentences you choose, and the way they were written down by the recogniser, so its next guesses fit you better. It never keeps recordings. You can
                 see what it has learned and delete everything at any time. A carer may agree for you. <Link to="/privacy">Read the privacy page</Link>.
               </p>
