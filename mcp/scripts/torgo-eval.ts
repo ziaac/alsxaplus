@@ -33,7 +33,7 @@ if (!root || !existsSync(root)) {
   console.error("Give the folder that holds the TORGO speakers (F01, M01, ...).");
   process.exit(2);
 }
-const perSpeaker = Number(flag("--per-speaker", "60"));
+const perSpeaker = Number(flag("--per-speaker", "80"));
 const onlySpeakers = flag("--speakers", "").split(",").filter(Boolean);
 const key = process.env.DEEPGRAM_API_KEY?.trim();
 if (!key) {
@@ -51,6 +51,14 @@ interface Item {
 const dirs = (p: string) => readdirSync(p).filter((d) => statSync(join(p, d)).isDirectory());
 
 function collect(): Item[] {
+  // scripts/extract_torgo_subset.py writes a manifest next to the recordings it copied.
+  const manifest = join(root!, "manifest.json");
+  if (existsSync(manifest)) {
+    const rows = JSON.parse(readFileSync(manifest, "utf8")) as { speaker: string; file: string; prompt: string; order: number }[];
+    return rows
+      .filter((r) => !onlySpeakers.length || onlySpeakers.includes(r.speaker))
+      .map((r) => ({ speaker: r.speaker, wav: join(root!, r.file), prompt: r.prompt, order: r.order }));
+  }
   const items: Item[] = [];
   // Speakers with dysarthria are F01, F03, F04, M01 to M05. Controls (FC.., MC..) are left out.
   const speakers = dirs(root!).filter((d) => /^[FM]0\d$/.test(d)).filter((d) => !onlySpeakers.length || onlySpeakers.includes(d));
