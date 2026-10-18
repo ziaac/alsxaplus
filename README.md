@@ -81,7 +81,7 @@ Open the live demo at https://alsxa.eziedutech.dev/sim, agree, type or say somet
 1. `cd mcp && npm test`: 31 tests, 23 of the ordering rules, the estimate and the model policy, 8 through the **official MCP client** against a real database (needs `TEST_DATABASE_URL`).
 2. `cd web && npm run e2e`: 17 browser tests, including automatic accessibility checks (axe-core, WCAG 2.1 A and AA) in every step, one-switch scanning, deleting data, and, when `DEEPGRAM_API_KEY` is set, a fake microphone that plays a synthetic voice through the three recognisers.
 3. `cd mcp && npx tsx scripts/probe.ts` sends 20 damaged transcripts to the real model through the real code and reports how often its order passed the rules. It spends a little money.
-4. `cd mcp && npx tsx scripts/torgo-eval.ts <TORGO folder>` measures the ordering on recordings of speakers with dysarthria (see [Results](#results)).
+4. `cd mcp && npx tsx scripts/torgo-eval.ts <folder>` and `npx tsx scripts/torgo-clarity.ts <folder> <controls folder>` measure the ordering and the estimate on TORGO recordings (see [Results](#results)).
 
 ## Architecture
 
@@ -155,7 +155,28 @@ These transcripts were written by hand to look like unclear speech. They show th
 
 ### Recordings of speakers with dysarthria (TORGO)
 
-To be filled in with the measured numbers when the evaluation has run.
+TORGO holds recordings of 8 speakers with dysarthria (ALS, cerebral palsy) reading words and sentences. Used here only to measure, on this machine, with the three Deepgram recognisers; no audio is in this repository, and the recordings are not played in the demo video. 80 recordings per speaker, spread over their sessions, 640 in all (499 single words, 141 sentences of two or more words). The ordering below uses the plain rules only, with no language model.
+
+**How good is the order of the six sentences?** Each speaker has a list of their own prompts (a phrase book of 68 to 79 entries) that the correct sentence is always part of, like a personal list of favourite phrases. We check whether the sentence that was really spoken is first.
+
+| Recordings | n | Best transcript is exactly right | Right sentence first | Right sentence among the six |
+|---|---|---|---|---|
+| All | 640 | 42% (268/640) | 62% (399/640) | 75% (481/640) |
+| One word | 499 | 44% | 55% (273/499) | 70% (348/499) |
+| Two or more words | 141 | 33% (47/141) | 89% (126/141) | 94% (133/141) |
+| Speaker F01 (hardest) | 80 | 18% | 33% (26/80) | 54% (43/80) |
+| Speaker M03 (easiest) | 80 | 83% | 94% (75/80) | 98% (78/80) |
+
+Offering a list of the person's own sentences raises how often the right sentence is first from 42% (the recogniser's best transcript, exactly right) to 62%, and it helps most for sentences. Speakers differ a lot, and for the speaker whom the recognisers understand least, the right sentence is among the six only 54% of the time. What this does **not** show: these are *closed* lists that already contain the answer, which is much easier than free speech; the "learned" effect is not measured fairly (only 36 recordings repeated a sentence, too few to say anything); and the recordings are read prompts in a lab. Per-speaker numbers are in the table the script prints.
+
+**When would the question be asked?** The same recordings, plus recordings from 7 TORGO speakers without dysarthria (280 recordings), through the estimate described above.
+
+| Recordings | n | Would be asked | Low confidence | Recognisers disagree |
+|---|---|---|---|---|
+| Speakers with dysarthria | 320 | 73% (232/320) | 48% | 50% |
+| Speakers without dysarthria | 280 | 36% (100/280) | 17% | 25% |
+
+The estimate does tell the groups apart: about twice as many recordings from speakers with dysarthria look unclear. But it is a weak signal for a person's first sentences: all 8 speakers with dysarthria would have been asked within their first 3 recordings, and so would 6 of the 7 speakers without it (most of the recordings are single words, which recognisers find hard for anyone). That is acceptable only because the question is asked once, costs one tap, and "No" leaves the assistant as usual; it would not be acceptable as a diagnosis, and it is not used as one. A better trigger (several unclear sentences in a row, or a trained model) is future work. Reproduce with `mcp/scripts/torgo-eval.ts` and `mcp/scripts/torgo-clarity.ts` after copying a subset with `scripts/extract_torgo_subset.py`.
 
 ## What it does not claim
 
