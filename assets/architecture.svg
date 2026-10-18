@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-labelledby="t d" font-family="Segoe UI, Arial, sans-serif">
+  <title id="t">How ALSxaPlus works</title>
+  <desc id="d">A person speaks, three recognisers write down what they heard, the suggest_meanings tool orders six sentences with a model on Amazon Bedrock checked by code, the person chooses, and the confirm_meaning tool says the sentence aloud and saves it with the sounds in PostgreSQL.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#14202b"/></marker>
+  </defs>
+  <rect width="1280" height="640" fill="#fbfaf7"/>
+
+  <!-- Bedrock -->
+  <rect x="640" y="16" width="320" height="86" rx="12" fill="#fff4e5" stroke="#b25e00" stroke-width="3"/>
+  <text x="800" y="46" text-anchor="middle" font-size="19" font-weight="700" fill="#14202b">Amazon Bedrock · Claude Haiku</text>
+  <text x="800" y="70" text-anchor="middle" font-size="16" fill="#14202b">proposes the order. Code checks it.</text>
+  <text x="800" y="90" text-anchor="middle" font-size="16" fill="#14202b">Plain rules take over if it fails.</text>
+  <line x1="800" y1="100" x2="800" y2="140" stroke="#14202b" stroke-width="3" marker-end="url(#a)"/>
+
+  <!-- Row 1 -->
+  <rect x="40" y="140" width="240" height="96" rx="12" fill="#ffffff" stroke="#14202b" stroke-width="3"/>
+  <text x="160" y="180" text-anchor="middle" font-size="21" font-weight="700" fill="#14202b">1. The person speaks</text>
+  <text x="160" y="206" text-anchor="middle" font-size="16" fill="#14202b">one short phrase, then a pause</text>
+
+  <rect x="360" y="140" width="240" height="96" rx="12" fill="#ffffff" stroke="#14202b" stroke-width="3"/>
+  <text x="480" y="174" text-anchor="middle" font-size="21" font-weight="700" fill="#14202b">2. Three recognisers</text>
+  <text x="480" y="199" text-anchor="middle" font-size="16" fill="#14202b">Deepgram Nova-3, Nova-2, base</text>
+  <text x="480" y="219" text-anchor="middle" font-size="16" fill="#14202b">several guesses per phrase</text>
+
+  <rect x="680" y="140" width="240" height="96" rx="12" fill="#e8f0f8" stroke="#0b4f8a" stroke-width="3"/>
+  <text x="800" y="174" text-anchor="middle" font-size="21" font-weight="700" fill="#14202b">3. suggest_meanings</text>
+  <text x="800" y="199" text-anchor="middle" font-size="16" fill="#14202b">MCP tool, with what this person</text>
+  <text x="800" y="219" text-anchor="middle" font-size="16" fill="#14202b">confirmed before</text>
+
+  <rect x="1000" y="140" width="240" height="96" rx="12" fill="#ffffff" stroke="#14202b" stroke-width="3"/>
+  <text x="1120" y="174" text-anchor="middle" font-size="21" font-weight="700" fill="#14202b">4. Six sentences</text>
+  <text x="1120" y="199" text-anchor="middle" font-size="16" fill="#14202b">one recommended, five others,</text>
+  <text x="1120" y="219" text-anchor="middle" font-size="16" fill="#14202b">best first</text>
+
+  <line x1="280" y1="188" x2="356" y2="188" stroke="#14202b" stroke-width="3" marker-end="url(#a)"/>
+  <line x1="600" y1="188" x2="676" y2="188" stroke="#14202b" stroke-width="3" marker-end="url(#a)"/>
+  <line x1="920" y1="188" x2="996" y2="188" stroke="#14202b" stroke-width="3" marker-end="url(#a)"/>
+
+  <!-- Down to row 2 -->
+  <line x1="1120" y1="236" x2="1120" y2="316" stroke="#14202b" stroke-width="3" marker-end="url(#a)"/>
+
+  <!-- Row 2 -->
+  <rect x="1000" y="320" width="240" height="96" rx="12" fill="#ffffff" stroke="#14202b" stroke-width="3"/>
+  <text x="1120" y="354" text-anchor="middle" font-size="21" font-weight="700" fill="#14202b">5. The person chooses</text>
+  <text x="1120" y="379" text-anchor="middle" font-size="16" fill="#14202b">touch, keys 1 to 6, one switch,</text>
+  <text x="1120" y="399" text-anchor="middle" font-size="16" fill="#14202b">or types their own</text>
+
+  <rect x="680" y="320" width="240" height="96" rx="12" fill="#e8f0f8" stroke="#0b4f8a" stroke-width="3"/>
+  <text x="800" y="354" text-anchor="middle" font-size="21" font-weight="700" fill="#14202b">6. confirm_meaning</text>
+  <text x="800" y="379" text-anchor="middle" font-size="16" fill="#14202b">MCP tool: the choice is the</text>
+  <text x="800" y="399" text-anchor="middle" font-size="16" fill="#14202b">only thing that is learned</text>
+
+  <rect x="360" y="320" width="240" height="96" rx="12" fill="#ffffff" stroke="#14202b" stroke-width="3"/>
+  <text x="480" y="354" text-anchor="middle" font-size="21" font-weight="700" fill="#14202b">7. Said aloud</text>
+  <text x="480" y="379" text-anchor="middle" font-size="16" fill="#14202b">in a clear voice</text>
+  <text x="480" y="399" text-anchor="middle" font-size="16" fill="#14202b">(Deepgram Aura 2)</text>
+
+  <line x1="1000" y1="368" x2="924" y2="368" stroke="#14202b" stroke-width="3" marker-end="url(#a)"/>
+  <line x1="680" y1="368" x2="604" y2="368" stroke="#14202b" stroke-width="3" marker-end="url(#a)"/>
+
+  <!-- Database -->
+  <rect x="680" y="500" width="560" height="84" rx="12" fill="#ffffff" stroke="#14202b" stroke-width="3" stroke-dasharray="10 6"/>
+  <text x="960" y="534" text-anchor="middle" font-size="21" font-weight="700" fill="#14202b">PostgreSQL, one profile per person</text>
+  <text x="960" y="560" text-anchor="middle" font-size="16" fill="#14202b">the sentence and the sounds are saved together, so next time they come first</text>
+  <line x1="800" y1="416" x2="800" y2="496" stroke="#14202b" stroke-width="3" marker-end="url(#a)"/>
+
+  <!-- The question -->
+  <rect x="40" y="300" width="280" height="150" rx="12" fill="#eef1f4" stroke="#14202b" stroke-width="3" stroke-dasharray="10 6"/>
+  <text x="180" y="334" text-anchor="middle" font-size="18" font-weight="700" fill="#14202b">Only if speech looks unclear</text>
+  <text x="180" y="362" text-anchor="middle" font-size="16" fill="#14202b">it asks once: "Do you have</text>
+  <text x="180" y="384" text-anchor="middle" font-size="16" fill="#14202b">difficulty speaking?"</text>
+  <text x="180" y="414" text-anchor="middle" font-size="16" fill="#14202b">Only the person's answer</text>
+  <text x="180" y="436" text-anchor="middle" font-size="16" fill="#14202b">turns the help on.</text>
+  <line x1="180" y1="300" x2="180" y2="240" stroke="#14202b" stroke-width="3" stroke-dasharray="10 6" marker-end="url(#a)"/>
+</svg>

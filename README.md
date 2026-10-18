@@ -60,19 +60,7 @@ What this means today: the first time something is hard to understand, the assis
 
 ## How it works
 
-```
-person speaks ──> three recognisers (Deepgram) ──> several guesses ("wa er", "water", ...)
-                                                        |
-                                                        v
-        suggest_meanings (MCP tool) <── what this person has confirmed before
-           |  model orders the candidates; code checks; rules if the model fails
-           v
-   one recommended sentence + five others ──> the person chooses or types
-                                                        |
-                                                        v
-                  confirm_meaning (MCP tool) ──> the sentence is said aloud
-                  and saved with the sounds, so next time it comes first
-```
+![How ALSxaPlus works: the person speaks, three recognisers write down what they heard, suggest_meanings orders six sentences with a model on Amazon Bedrock that code checks, the person chooses, confirm_meaning says the sentence aloud and saves it with the sounds in PostgreSQL.](assets/architecture.svg)
 
 ## How to test
 
