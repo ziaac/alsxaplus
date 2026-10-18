@@ -1,6 +1,6 @@
 # ALSxaPlus
 
-> When speech is unclear, a voice assistant often gives up. ALSxaPlus shows the sentences you may have meant, says the one you choose aloud in a clear voice, and learns how *you* sound, so the next guess is better.
+> When speech is unclear, a voice assistant often gives up. People whose speech is changed by ALS, cerebral palsy, Parkinson's disease, stroke or another condition are misheard again and again, and are left repeating themselves. ALSxaPlus asks the person once whether speaking is difficult for them, remembers the answer, shows the sentences they may have meant, says the one they choose aloud in a clear voice, and learns how *they* sound, so the next guess is better. It never decides by itself that someone has a disability: it asks, and the person (or their carer) answers.
 
 ![Node.js 24](https://img.shields.io/badge/Node.js-24-5FA04E)
 ![React Router 8.4](https://img.shields.io/badge/React%20Router-8.4-CA4245)
@@ -9,7 +9,9 @@
 
 Built for the **Amazon Developer Hackathon 2026** (Devpost), Alexa+ track, with the AWS Builder mini challenge through Amazon Bedrock. It is an idea for an Alexa+ add-on for people with speech disabilities, starting with ALS, shown through a web simulation of a smart display that talks to a real MCP server.
 
-Status: **early build, not deployed yet.** The MCP server, the simulated display, the speech path and the tests work. Each section below says which is which.
+Live demo: **https://alsxa.eziedutech.dev/sim** (a read-only copy: profiles are deleted after a day idle).
+
+Status: **early build, deployed as a web simulation.** The MCP server, the simulated display, the speech path and the tests work. Each section below says which is which.
 
 ## Table of Contents
 
@@ -36,6 +38,8 @@ ALSxaPlus does four things:
 3. **Speaks for the person.** The chosen sentence is said aloud in a clear voice.
 4. **Learns.** The sentence the person chose, and the way the recogniser wrote the sounds, are saved together, so the next time those sounds come first.
 
+What this means today: the first time a person speaks, the assistant asks the one question and remembers the answer (yes turns the help on, no leaves the assistant as usual, and it can be changed at any time). It does not judge a voice or a medical condition. Recognising a returning speaker by their sounds (not by a voiceprint) works through the learned sounds-to-sentence pairs of each profile. Detecting a possible speech disability from the audio itself is **planned, not built**, and would need work with clinicians and with people who live with these conditions.
+
 ### Built today
 
 - **An MCP server** (official TypeScript SDK, protocol 2025-11-25, Streamable HTTP) with five tools: `get_status`, `set_speech_support`, `suggest_meanings`, `confirm_meaning`, `list_my_phrases`. Consent and deleting data are *not* tools: a voice assistant must never be able to agree for someone or erase their data. They are buttons for the person.
@@ -49,7 +53,6 @@ ALSxaPlus does four things:
 
 ### Planned, not built
 
-- Deployment of a hosted copy (the files are written).
 - A card shown through MCP Apps on a real Alexa+ screen. The simulation draws the choices itself.
 - Real use by, and design with, people who live with speech disabilities.
 
@@ -71,7 +74,7 @@ person speaks ──> three recognisers (Deepgram) ──> several guesses ("wa 
 
 ## How to test
 
-There is no hosted version yet. Run the checks on your own machine (see [Running locally](#running-locally)).
+Open the live demo at https://alsxa.eziedutech.dev/sim, agree, type or say something unclear such as "ah wan bed", and choose a sentence. To run the checks on your own machine, see [Running locally](#running-locally).
 
 1. `cd mcp && npm test`: 29 tests, 21 of the ordering rules and the model policy, 8 through the **official MCP client** against a real database (needs `TEST_DATABASE_URL`).
 2. `cd web && npm run e2e`: 16 browser tests, including automatic accessibility checks (axe-core, WCAG 2.1 A and AA) in every step, one-switch scanning, deleting data, and, when `DEEPGRAM_API_KEY` is set, a fake microphone that plays a synthetic voice through the three recognisers.
