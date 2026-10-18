@@ -1,6 +1,8 @@
 # ALSxaPlus
 
 > When speech is unclear, a voice assistant often gives up. People whose speech is changed by ALS, cerebral palsy, Parkinson's disease, stroke or another condition are misheard again and again, and are left repeating themselves. ALSxaPlus asks the person once whether speaking is difficult for them, remembers the answer, shows the sentences they may have meant, says the one they choose aloud in a clear voice, and learns how *they* sound, so the next guess is better. It never decides by itself that someone has a disability: it asks, and the person (or their carer) answers.
+>
+> It offers help for today and for the years ahead. Today, a person who is already hard to understand gets choices instead of "Sorry, I didn't get that". Later, as a condition such as ALS progresses and speech changes, the same profile keeps learning from every sentence the person confirms, so the help follows the voice as it changes instead of needing to be set up again. The choices can also be made by touch, keys or a single switch, so the help does not depend on speech at all when speech is no longer possible.
 
 ![Node.js 24](https://img.shields.io/badge/Node.js-24-5FA04E)
 ![React Router 8.4](https://img.shields.io/badge/React%20Router-8.4-CA4245)
