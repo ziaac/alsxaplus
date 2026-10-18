@@ -1,0 +1,65 @@
+# ALSxaPlus in production: the database (dbpg), the MCP server (backnode), and the web app (frontrr).
+# Dokploy: create a Compose service from this repository, set the variables below in its Environment tab, and attach
+# the domain to the service `frontrr` on port 3000. Nothing here publishes a port by itself. Only `frontrr` is reachable
+# from outside. The MCP server and the database stay on the private network.
+name: alsxaplus
+
+services:
+  dbpg:
+    image: postgres:18.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - alsxaplus-db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backnode:
+    build: ./mcp
+    restart: unless-stopped
+    depends_on:
+      dbpg:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@dbpg:5432/${POSTGRES_DB}
+      PORT: "8081"
+      SERVICE_KEY: ${SERVICE_KEY}
+      PROFILE_TTL_HOURS: ${PROFILE_TTL_HOURS:-24}
+      # The web app reaches the server as "backnode"; add the public host name only if you expose /mcp.
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-backnode,localhost,127.0.0.1}
+      # Leave AWS_BEARER_TOKEN_BEDROCK empty to order the sentences with the plain rules only.
+      AWS_BEARER_TOKEN_BEDROCK: ${AWS_BEARER_TOKEN_BEDROCK:-}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      BEDROCK_MODEL_ID: ${BEDROCK_MODEL_ID:-}
+      BEDROCK_MONTHLY_LIMIT_USD: ${BEDROCK_MONTHLY_LIMIT_USD:-20}
+      BEDROCK_PRICE_INPUT_USD_PER_MTOK: ${BEDROCK_PRICE_INPUT_USD_PER_MTOK:-}
+      BEDROCK_PRICE_OUTPUT_USD_PER_MTOK: ${BEDROCK_PRICE_OUTPUT_USD_PER_MTOK:-}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  frontrr:
+    build: ./web
+    restart: unless-stopped
+    depends_on:
+      backnode:
+        condition: service_healthy
+    environment:
+      MCP_URL: http://backnode:8081
+      SERVICE_KEY: ${SERVICE_KEY}
+      # Optional. Speech through Deepgram; without it the page still works by typing. Never sent to a browser.
+      DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY:-}
+    expose:
+      - "3000"
+
+volumes:
+  alsxaplus-db-data:

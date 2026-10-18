@@ -1,0 +1,10 @@
+node_modules
+build
+.react-router
+test-results
+playwright-report
+.env
+.env.*
+e2e
+Dockerfile
+.dockerignore
