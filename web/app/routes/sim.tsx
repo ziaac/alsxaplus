@@ -136,6 +136,11 @@ export default function Sim() {
           say("assistant", res.spoken, true);
           return;
         }
+        if (res.status === "no_help_needed") {
+          setPhase("idle");
+          say("assistant", res.spoken, true);
+          return;
+        }
         if (res.status === "speech_support_off") {
           setPhase("idle");
           setNotice("Speech support is off. Turn it on in the settings to get suggestions.");
@@ -450,7 +455,7 @@ export default function Sim() {
           {phase === "ask_support" ? (
             <div>
               <h1 className="prompt">Do you have difficulty speaking?</h1>
-              <p>I will only ask once. If you say yes, I will offer sentences for what you say. You can change this in the settings.</p>
+              <p>I had some trouble understanding that. That can have many causes, so I am asking instead of assuming. I will only ask once. If you say yes, I will offer sentences for what you say. You can change this in the settings.</p>
               <div className="row">
                 <button className="big primary" type="button" onClick={() => void answerSupport(true)} autoFocus>
                   Yes

@@ -22,7 +22,7 @@ export default function Guide() {
             <strong>Speak, or type.</strong> Press <strong>Speak</strong>, say a short phrase, then pause. Without a microphone, type the words as a recogniser might write them, for example "ah wan wa er".
           </li>
           <li>
-            <strong>Answer the question, once.</strong> The first time only, you are asked "Do you have difficulty speaking?" Say or press Yes to get suggestions. It is never asked again, and you can change it in the settings.
+            <strong>Answer the question, once.</strong> The first time something is hard to understand, you are asked "Do you have difficulty speaking?" Say or press Yes to get suggestions. Clear speech is simply understood and nothing is asked. The question is never asked again, nothing is assumed about you, and you can change the answer in the settings.
           </li>
           <li>
             <strong>Choose.</strong> You see one recommended sentence and five others. Tap one, press the key 1 to 6, or use one-switch scanning. If none is right, type your own words. If you want to try again, choose "Say it again".

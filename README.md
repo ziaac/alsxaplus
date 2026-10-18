@@ -1,6 +1,6 @@
 # ALSxaPlus
 
-> When speech is unclear, a voice assistant often gives up. People whose speech is changed by ALS, cerebral palsy, Parkinson's disease, stroke or another condition are misheard again and again, and are left repeating themselves. ALSxaPlus asks the person once whether speaking is difficult for them, remembers the answer, shows the sentences they may have meant, says the one they choose aloud in a clear voice, and learns how *they* sound, so the next guess is better. It never decides by itself that someone has a disability: it asks, and the person (or their carer) answers.
+> When speech is unclear, a voice assistant often gives up. People whose speech is changed by ALS, cerebral palsy, Parkinson's disease, stroke or another condition are misheard again and again, and are left repeating themselves. ALSxaPlus estimates, from how sure and how consistent the recognisers are, when what it heard was hard to understand. It does not conclude anything from that: it asks the person once whether speaking is difficult for them, and remembers the answer. Then it shows the sentences they may have meant, says the one they choose aloud in a clear voice, and learns how *they* sound, so the next guess is better. It never decides by itself that someone has a disability, because unclear speech has many causes: the estimate only decides *whether to ask*, and only the person (or their carer) answers.
 >
 > It offers help for today and for the years ahead. Today, a person who is already hard to understand gets choices instead of "Sorry, I didn't get that". Later, as a condition such as ALS progresses and speech changes, the same profile keeps learning from every sentence the person confirms, so the help follows the voice as it changes instead of needing to be set up again. The choices can also be made by touch, keys or a single switch, so the help does not depend on speech at all when speech is no longer possible.
 
@@ -35,12 +35,12 @@ Voice assistants are built for typical speech. People whose speech is changed by
 
 ALSxaPlus does four things:
 
-1. **Asks once.** The first time, it asks "Do you have difficulty speaking?" and remembers the answer. It never asks again unless the person changes it.
+1. **Estimates, then asks once.** When what it heard was hard to understand (low confidence, or the recognisers disagree), it asks "Do you have difficulty speaking?" and remembers the answer. Clear speech is simply understood and nothing is asked. The estimate is never stored as a conclusion and never switches anything on: only the answer does. The question is not asked again unless the person changes it in the settings.
 2. **Offers sentences instead of guessing.** For what was heard it shows one recommended sentence and five others, best first. The person picks by touch, with keys 1 to 6, or with one switch, or types their own words, or says it again. A guess never acts on its own.
 3. **Speaks for the person.** The chosen sentence is said aloud in a clear voice.
 4. **Learns.** The sentence the person chose, and the way the recogniser wrote the sounds, are saved together, so the next time those sounds come first.
 
-What this means today: the first time a person speaks, the assistant asks the one question and remembers the answer (yes turns the help on, no leaves the assistant as usual, and it can be changed at any time). It does not judge a voice or a medical condition. Recognising a returning speaker by their sounds (not by a voiceprint) works through the learned sounds-to-sentence pairs of each profile. Detecting a possible speech disability from the audio itself is **planned, not built**, and would need work with clinicians and with people who live with these conditions.
+What this means today: the first time something is hard to understand, the assistant asks the one question and remembers the answer (yes turns the help on, no leaves the assistant as usual, and it can be changed at any time). The estimate uses only the recognisers' confidence and whether they agree, so it can be wrong in both directions: a noisy room can trigger the question, and a mild impairment that the recognisers still understand will not, which is why the help can also be turned on in the settings. It does not judge a voice or a medical condition. Recognising a returning speaker by their sounds (not by a voiceprint) works through the learned sounds-to-sentence pairs of each profile. A trained detector of speech disability from the audio itself is **planned, not built**, and would need work with clinicians and with people who live with these conditions.
 
 ### Built today
 
@@ -78,8 +78,8 @@ person speaks ──> three recognisers (Deepgram) ──> several guesses ("wa 
 
 Open the live demo at https://alsxa.eziedutech.dev/sim, agree, type or say something unclear such as "ah wan bed", and choose a sentence. To run the checks on your own machine, see [Running locally](#running-locally).
 
-1. `cd mcp && npm test`: 29 tests, 21 of the ordering rules and the model policy, 8 through the **official MCP client** against a real database (needs `TEST_DATABASE_URL`).
-2. `cd web && npm run e2e`: 16 browser tests, including automatic accessibility checks (axe-core, WCAG 2.1 A and AA) in every step, one-switch scanning, deleting data, and, when `DEEPGRAM_API_KEY` is set, a fake microphone that plays a synthetic voice through the three recognisers.
+1. `cd mcp && npm test`: 31 tests, 23 of the ordering rules, the estimate and the model policy, 8 through the **official MCP client** against a real database (needs `TEST_DATABASE_URL`).
+2. `cd web && npm run e2e`: 17 browser tests, including automatic accessibility checks (axe-core, WCAG 2.1 A and AA) in every step, one-switch scanning, deleting data, and, when `DEEPGRAM_API_KEY` is set, a fake microphone that plays a synthetic voice through the three recognisers.
 3. `cd mcp && npx tsx scripts/probe.ts` sends 20 damaged transcripts to the real model through the real code and reports how often its order passed the rules. It spends a little money.
 4. `cd mcp && npx tsx scripts/torgo-eval.ts <TORGO folder>` measures the ordering on recordings of speakers with dysarthria (see [Results](#results)).
 
@@ -135,9 +135,9 @@ Measured, not claimed. Everything below is reproducible with the commands above.
 
 | Suite | Result |
 |---|---|
-| Ordering rules, model policy and text helpers | 21 passed |
-| MCP server through the official TypeScript client against PostgreSQL (consent, the question asked once, learning, isolation between people, deleting, no consent or delete tool, 401 and host checks) | 8 passed |
-| Browser tests in Chromium (consent gate, question once, choosing by key, learning, typing, one-switch scanning, deleting, copying the conversation, phone-sized screen, accessibility in every step, voice with a fake microphone) | 16 passed |
+| Ordering rules, the clarity estimate, model policy and text helpers | 23 passed |
+| MCP server through the official TypeScript client against PostgreSQL (consent, clear speech not questioned, the question asked once, learning, isolation between people, deleting, no consent or delete tool, 401 and host checks) | 8 passed |
+| Browser tests in Chromium (consent gate, question once, choosing by key, learning, typing, one-switch scanning, deleting, copying the conversation, phone-sized screen, accessibility in every step, voice with a fake microphone) | 17 passed |
 
 ### The model on damaged transcripts
 

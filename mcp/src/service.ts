@@ -1,6 +1,7 @@
 // What the server does for one person. Everything here is independent of MCP and HTTP, so it can be tested directly.
 // The sentence that is offered is only ever a suggestion: the person decides, and the person's choice is what is learned.
 import { callWithRetries, ModelError } from "./bedrock.js";
+import { assessClarity, type UnclearReason } from "./clarity.js";
 import type { Config } from "./config.js";
 import type { Db } from "./db.js";
 import { CORE_PHRASES } from "./phrasebank.js";
@@ -151,19 +152,30 @@ export interface Suggestion {
 
 export type SuggestResult =
   | Suggestion
-  | { status: "needs_speech_support_answer"; spoken: string }
+  | { status: "needs_speech_support_answer"; reasons: UnclearReason[]; spoken: string }
+  | { status: "no_help_needed"; spoken: string }
   | { status: "speech_support_off"; spoken: string };
 
 export async function suggestMeanings(deps: Deps, profileId: string, heardInput: unknown): Promise<SuggestResult> {
   const { db, config } = deps;
   const status = await requireConsent(db, profileId);
+  const heard = cleanHeard(heardInput);
   if (status.speech_support === null) {
-    return { status: "needs_speech_support_answer", spoken: "Do you have difficulty speaking? Say yes or no. I will only ask once." };
+    // Not asked yet. Only when what was heard looks unclear is the person asked, and only the person's answer counts:
+    // the estimate is not stored and never switches anything on.
+    const clarity = assessClarity(heard);
+    if (!clarity.unclear) {
+      return { status: "no_help_needed", spoken: "I understood that, so I will carry on as usual. If it ever gets hard to understand you, I will ask whether you would like help." };
+    }
+    return {
+      status: "needs_speech_support_answer",
+      reasons: clarity.reasons,
+      spoken: "I had some trouble understanding that. Do you have difficulty speaking? Say yes or no. I will only ask once, and I will not assume anything.",
+    };
   }
   if (status.speech_support === false) {
     return { status: "speech_support_off", spoken: "Speech support is off, so I will listen as usual. You can turn it on at any time." };
   }
-  const heard = cleanHeard(heardInput);
 
   const personalRows = await db.query("SELECT text, uses FROM phrases WHERE profile_id = $1 ORDER BY uses DESC, last_used_at DESC LIMIT 40", [profileId]);
   const personal: PersonalPhrase[] = personalRows.rows.map((r) => ({ text: String(r.text), uses: Number(r.uses) }));

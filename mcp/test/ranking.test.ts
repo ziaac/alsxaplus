@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CORE_PHRASES } from "../src/phrasebank.js";
 import { applyModelOutput, buildPool, fallbackRank, fillUp, MAX_OPTIONS, PolicyViolation, shownToModel, type Heard } from "../src/ranking.js";
+import { assessClarity } from "../src/clarity.js";
 import { dice, editRatio, levenshtein, normalize, similarity } from "../src/similarity.js";
 
 const heard = (text: string, confidence = 0.5): Heard[] => [{ text, confidence }];
@@ -132,5 +133,16 @@ describe("the policy for a model's answer", () => {
   it("fillUp never repeats a sentence", () => {
     const filled = fillUp([fullPool[0]!], fullPool, h);
     expect(new Set(filled.map((c) => normalize(c.text))).size).toBe(filled.length);
+  });
+});
+
+describe("estimating whether to ask", () => {
+  it("confident recognisers that agree are understood without a question", () => {
+    expect(assessClarity([{ text: "I need some water", confidence: 0.97 }, { text: "I need some water.", confidence: 0.9 }]).unclear).toBe(false);
+  });
+  it("low confidence, disagreement, or nothing heard lead to the question", () => {
+    expect(assessClarity([{ text: "I need some water", confidence: 0.6 }]).reasons).toContain("low_confidence");
+    expect(assessClarity([{ text: "mother shows yellow gingham", confidence: 0.92 }, { text: "bubble in a bed", confidence: 0.4 }]).reasons).toContain("recognisers_disagree");
+    expect(assessClarity([]).reasons).toEqual(["nothing_heard"]);
   });
 });

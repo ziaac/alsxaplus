@@ -42,7 +42,7 @@ export default function About() {
         <h2 id="diff">What is different</h2>
         <ul className="plain">
           <li>
-            <strong>Asked once.</strong> The question "Do you have difficulty speaking?" comes one time and is remembered.
+            <strong>Asked once, and only after something was hard to understand.</strong> When the recognisers are unsure or disagree, the assistant asks "Do you have difficulty speaking?" one time and remembers the answer. The estimate is never a verdict: unclear speech has many causes, so nothing is switched on until the person, or their carer, says yes.
           </li>
           <li>
             <strong>One recommended sentence and five others,</strong> best first, with a way to type your own and a way to say it again.

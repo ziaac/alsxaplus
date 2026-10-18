@@ -79,8 +79,15 @@ describe.skipIf(!databaseUrl)("through the official MCP client", () => {
 
     expect((await consent(token)).status).toBe(200);
 
+    // Clear speech (confident and the recognisers agree) is not questioned, and nothing is switched on.
+    r = await call(client, "suggest_meanings", { heard: [{ text: "I need some water", confidence: 0.97 }, { text: "i need some water.", confidence: 0.95 }] });
+    expect(r.s.status).toBe("no_help_needed");
+    expect((await call(client, "get_status")).s.speech_support).toBeNull();
+
+    // Unsure words: the person is asked, and the estimate itself changes nothing.
     r = await call(client, "suggest_meanings", { heard: [{ text: "wa er" }] });
     expect(r.s.status).toBe("needs_speech_support_answer");
+    expect(r.s.reasons).toContain("low_confidence");
     expect((await call(client, "get_status")).s.speech_support).toBeNull();
 
     r = await call(client, "set_speech_support", { enabled: true });

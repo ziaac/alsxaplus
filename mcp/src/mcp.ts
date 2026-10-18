@@ -46,7 +46,7 @@ export function createMcpServer(deps: Deps, profileId: string): McpServer {
     {
       title: "Set speech support",
       description:
-        "Record the person's answer to 'Do you have difficulty speaking?'. Ask it only once, the first time, and never again unless the person asks to change it. enabled=true turns suggestions on for every later utterance.",
+        "Record the person's answer to 'Do you have difficulty speaking?'. Ask it only once, when suggest_meanings says the speech was hard to understand (needs_speech_support_answer), and never again unless the person asks to change it. Never answer it on the person's behalf. enabled=true turns suggestions on for every later utterance.",
       inputSchema: { enabled: z.boolean().describe("true if the person said they have difficulty speaking and want suggestions") },
     },
     async ({ enabled }) =>

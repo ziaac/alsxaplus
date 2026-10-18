@@ -3,7 +3,7 @@
 TORGO (Rudzicz, Namasivayam and Wolff, 2012) is free for academic and non-profit use and asks for citation. The audio
 stays on this machine: the output folder is data/torgo, which .gitignore excludes. Only aggregate numbers are reported.
 
-Usage: python -I scripts/extract_torgo_subset.py <folder with train-*.parquet> <output folder> [per-speaker count]
+Usage: python -I scripts/extract_torgo_subset.py <folder with train-*.parquet> <output folder> [per-speaker count] [dysarthria|healthy]
 """
 
 import json
@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pyarrow.parquet as pq
 
-NAME = re.compile(r"^(?P<speaker>[FM]\d+)_(?P<session>\d+)_(?P<mic>[A-Za-z]+)_(?P<utt>\d+)\.wav$")
+NAME = re.compile(r"^(?P<speaker>[FM]C?\d+)_(?P<session>\d+)_(?P<mic>[A-Za-z]+)_(?P<utt>\d+)\.wav$")
 TEXT = re.compile(r"^[A-Za-z' ,.!?-]+$")
 
 
@@ -21,6 +21,7 @@ def main() -> None:
     source = Path(sys.argv[1])
     target = Path(sys.argv[2])
     per_speaker = int(sys.argv[3]) if len(sys.argv) > 3 else 80
+    wanted_status = sys.argv[4] if len(sys.argv) > 4 else "dysarthria"
     shards = sorted(source.glob("train-*.parquet"))
     if not shards:
         raise SystemExit(f"no train-*.parquet in {source}")
@@ -32,7 +33,7 @@ def main() -> None:
         paths = table.column("audio").combine_chunks().field("path").to_pylist()
         for path, text, status in zip(paths, table.column("transcription").to_pylist(), table.column("speech_status").to_pylist()):
             match = NAME.match(path)
-            if not match or status != "dysarthria" or match["mic"] != "headMic":
+            if not match or status != wanted_status or match["mic"] != "headMic":
                 continue
             text = " ".join(text.split())
             if not text or not TEXT.match(text) or "xxx" in text.lower():
@@ -63,6 +64,7 @@ def main() -> None:
             out.write_bytes(blobs[i].as_py())
             written += 1
 
+    target.mkdir(parents=True, exist_ok=True)
     (target / "manifest.json").write_text(json.dumps(manifest, indent=1), encoding="utf8")
     print(f"wrote {written} recordings and manifest.json to {target}")
     if written != len(chosen):

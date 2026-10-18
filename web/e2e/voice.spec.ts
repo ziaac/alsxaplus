@@ -21,22 +21,43 @@ async function sayAsWav(text: string): Promise<string> {
   return file;
 }
 
-test("a spoken phrase goes through the microphone and three recognisers and comes back as six sentences", async () => {
-  const wav = await sayAsWav("I need some water");
+async function openWithVoice(text: string, before?: (page: import("@playwright/test").Page) => Promise<void>) {
+  const wav = await sayAsWav(text);
   const browser = await chromium.launch({ args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", `--use-file-for-fake-audio-capture=${wav}%noloop`] });
+  const page = await browser.newPage({ baseURL: "http://127.0.0.1:5299" });
+  page.on("dialog", (dialog) => {
+    throw new Error(`a browser dialog opened: ${dialog.type()} "${dialog.message()}"`);
+  });
+  await page.goto("/sim");
+  await page.getByLabel(/I agree, or I am the carer/).check();
+  await page.getByRole("button", { name: "Agree and start" }).click();
+  await before?.(page);
+  return { browser, page };
+}
+
+test("clear speech is simply understood: nothing is asked and nothing is assumed", async () => {
+  const { browser, page } = await openWithVoice("I need some water");
   try {
-    const page = await browser.newPage({ baseURL: "http://127.0.0.1:5299" });
-    page.on("dialog", (dialog) => {
-      throw new Error(`a browser dialog opened: ${dialog.type()} "${dialog.message()}"`);
-    });
-    await page.goto("/sim");
-    await page.getByLabel(/I agree, or I am the carer/).check();
-    await page.getByRole("button", { name: "Agree and start" }).click();
     await page.getByRole("button", { name: "Speak", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Do you have difficulty speaking?" })).toBeVisible({ timeout: 40_000 });
+    await expect(page.getByText(/I understood that, so I will carry on as usual/)).toBeVisible({ timeout: 40_000 });
+    await expect(page.getByRole("heading", { name: "Do you have difficulty speaking?" })).toHaveCount(0);
+    await expect(page.locator("ol.options button.option")).toHaveCount(0);
+  } finally {
+    await browser.close();
+  }
+});
+
+test("a spoken phrase goes through the microphone and three recognisers and comes back as six sentences", async () => {
+  // The person (or carer) has already said that speaking is difficult, in the settings, so the answer is on record.
+  const { browser, page } = await openWithVoice("I need some water", async (p) => {
+    await p.getByText("Settings and my data").click();
+    await p.getByLabel(/I have difficulty speaking/).click();
+    await expect(p.getByText("Speech support is on.")).toBeVisible();
+  });
+  try {
+    await page.getByRole("button", { name: "Speak", exact: true }).click();
+    await expect(page.locator("ol.options button.option")).toHaveCount(6, { timeout: 40_000 });
     await expect(page.locator(".line.you").last()).toContainText(/water/i);
-    await page.getByRole("button", { name: "Yes", exact: true }).click();
-    await expect(page.locator("ol.options button.option")).toHaveCount(6, { timeout: 15_000 });
     await expect(page.locator("ol.options button.option").first()).toContainText(/water/i);
   } finally {
     await browser.close();
