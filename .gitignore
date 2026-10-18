@@ -1,0 +1,24 @@
+# Secrets
+.env
+.env.*
+!.env.example
+credentials/
+*.pem
+*.key
+
+# Build and dependencies
+node_modules/
+dist/
+build/
+.react-router/
+test-results/
+playwright-report/
+
+# Data that must never be committed: speech recordings (TORGO and others) and local results
+data/
+*.wav
+*.mp3
+*.webm
+
+# Local files
+*.log

@@ -1,0 +1,33 @@
+{
+  "name": "alsxaplus-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "react-router build",
+    "dev": "react-router dev --port 5273",
+    "start": "react-router-serve ./build/server/index.js",
+    "typecheck": "react-router typegen && tsc",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@react-router/node": "8.4.0",
+    "@react-router/serve": "8.4.0",
+    "isbot": "5.2.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router": "8.4.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.64.1",
+    "@react-router/dev": "8.4.0",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.4"
+  },
+  "engines": {
+    "node": ">=22.22.0"
+  }
+}
