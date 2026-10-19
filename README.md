@@ -1,8 +1,8 @@
 # ALSxaPlus
 
-> When speech is unclear, a voice assistant often gives up. People whose speech is changed by ALS, cerebral palsy, Parkinson's disease, stroke or another condition are misheard again and again, and are left repeating themselves. ALSxaPlus estimates, from how sure and how consistent the recognisers are, when what it heard was hard to understand. It does not conclude anything from that: it asks the person once whether speaking is difficult for them, and remembers the answer. Then it shows the sentences they may have meant, says the one they choose aloud in a clear voice, and learns how *they* sound, so the next guess is better. It never decides by itself that someone has a disability, because unclear speech has many causes: the estimate only decides *whether to ask*, and only the person (or their carer) answers.
+> When speech is unclear, a voice assistant often gives up. People whose speech is changed by ALS, cerebral palsy, Parkinson's disease, a stroke or another condition are misheard again and again. ALSxaPlus notices when it had trouble understanding, asks the person once whether speaking is difficult for them, shows the sentences they may have meant, says the one they choose aloud in a clear voice, and learns how *they* sound. It never decides by itself that someone has a disability: only the person (or their carer) answers.
 >
-> It offers help for today and for the years ahead. Today, a person who is already hard to understand gets choices instead of "Sorry, I didn't get that". Later, as a condition such as ALS progresses and speech changes, the same profile keeps learning from every sentence the person confirms, so the help follows the voice as it changes instead of needing to be set up again. The choices can also be made by touch, keys or a single switch, so the help does not depend on speech at all when speech is no longer possible.
+> The help is meant for today and for later. As speech changes, the same profile keeps learning from every sentence the person confirms, and the choices can also be made by touch, keys or a single switch when speech is no longer possible.
 
 ![Rust 1.99](https://img.shields.io/badge/Rust-1.99-B7410E)
 ![Node.js 24](https://img.shields.io/badge/Node.js-24-5FA04E)
@@ -12,9 +12,7 @@
 
 Built for the **Amazon Developer Hackathon 2026** (Devpost), Alexa+ track, with the AWS Builder mini challenge through Amazon Bedrock. It is an idea for an Alexa+ add-on for people with speech disabilities, starting with ALS, shown through a web simulation of a smart display that talks to a real MCP server.
 
-Live demo: **https://alsxa.eziedutech.dev/sim** (a read-only copy: profiles are deleted after a day idle).
-
-Status: **early build, deployed as a web simulation.** The MCP server, the simulated display, the speech path and the tests work. Each section below says which is which.
+Live demo: **https://alsxa.eziedutech.dev/sim** (a profile is deleted after a day without use).
 
 ## Table of Contents
 
@@ -32,31 +30,31 @@ Status: **early build, deployed as a web simulation.** The MCP server, the simul
 
 ## What it is
 
-Voice assistants are built for typical speech. People whose speech is changed by ALS, cerebral palsy or stroke are often misheard again and again. But a recogniser's mistakes for one person are usually *consistent*: the same sounds are written down the same wrong way. That is a pattern a system can learn.
+Voice assistants are built for typical speech. But a recogniser's mistakes for one person are usually *consistent*: the same sounds are written down the same wrong way. That is a pattern a system can learn.
 
 ALSxaPlus does four things:
 
-1. **Estimates, then asks once.** When what it heard was hard to understand (low confidence, or the recognisers disagree), it asks "Do you have difficulty speaking?" and remembers the answer. Clear speech is simply understood and nothing is asked. The estimate is never stored as a conclusion and never switches anything on: only the answer does. The question is not asked again unless the person changes it in the settings.
-2. **Offers sentences instead of guessing.** For what was heard it shows one recommended sentence and five others, best first. The person picks by touch, with keys 1 to 6, or with one switch, or types their own words, or says it again. A guess never acts on its own.
+1. **Estimates, then asks once.** When what it heard was hard to understand (low confidence, or the recognisers disagree), it asks "Do you have difficulty speaking?" and remembers the answer. Clear speech is simply understood and nothing is asked. The estimate is never stored as a conclusion and never switches anything on: only the answer does. It can be wrong in both directions, so the help can also be turned on in the settings.
+2. **Offers sentences instead of guessing.** It shows one recommended sentence and five others, best first. The person picks by touch, with keys 1 to 6, or with one switch, or types their own words, or says it again. A guess never acts on its own.
 3. **Speaks for the person.** The chosen sentence is said aloud in a clear voice.
 4. **Learns.** The sentence the person chose, and the way the recogniser wrote the sounds, are saved together, so the next time those sounds come first.
-
-What this means today: the first time something is hard to understand, the assistant asks the one question and remembers the answer (yes turns the help on, no leaves the assistant as usual, and it can be changed at any time). The estimate uses only the recognisers' confidence and whether they agree, so it can be wrong in both directions: a noisy room can trigger the question, and a mild impairment that the recognisers still understand will not, which is why the help can also be turned on in the settings. It does not judge a voice or a medical condition. Recognising a returning speaker by their sounds (not by a voiceprint) works through the learned sounds-to-sentence pairs of each profile. A trained detector of speech disability from the audio itself is **planned, not built**, and would need work with clinicians and with people who live with these conditions.
 
 ### Built today
 
 - **An MCP server** written in Rust (the official `rmcp` SDK, protocol 2025-11-25, Streamable HTTP) with five tools: `get_status`, `set_speech_support`, `suggest_meanings`, `confirm_meaning`, `list_my_phrases`. Consent and deleting data are *not* tools: a voice assistant must never be able to agree for someone or erase their data. They are buttons for the person.
-- **An ordering that a model proposes and code checks.** Claude Haiku on Amazon Bedrock may order the candidate sentences. Only an answer that passes the rules is used: ids that were offered, no repeats, and at most two "corrections" that stay within half of the letters of what was heard, are short plain text, and use only words that already appear in the candidates or in what was heard. If the model is missing, over budget, empty or breaks a rule, plain rules (letter and consonant similarity, plus what was learned) order the sentences, and the stored record says which one decided and why.
+- **An ordering that a model proposes and code checks.** Claude Haiku on Amazon Bedrock may order the candidate sentences. Only an answer that passes the rules is used: ids that were offered, no repeats, and at most two "corrections" that stay close to what was heard and use only words that already appear in the candidates or in what was heard. If the model is missing, over budget, empty or breaks a rule, plain rules (letter and consonant similarity, plus what was learned) order the sentences, and the stored record says which one decided and why.
 - **Per-person learning.** What a person confirmed, and the sounds that went with it, are stored per profile and ranked first the next time.
 - **Three recognisers for one phrase.** Deepgram's Nova-3, Nova-2 and base models listen to the same recording and write it down differently. All the distinct guesses are used as evidence.
-- **A simulated smart display** (`web`): consent first, then the screen described above. Large targets, strong contrast, keyboard shortcuts, and **one-switch scanning** (the choices light up in turn and a single key picks the lit one). Nothing moves unless asked.
+- **A simulated smart display** (`web`): consent first, large targets, strong contrast, keyboard shortcuts, and **one-switch scanning** (the choices light up in turn and a single key picks the lit one).
 - **A spending limit enforced in code.** Every model call is recorded with its cost, and a call is refused when the month's spending plus its worst case would pass the limit.
-- **Your data is yours.** Settings show every learned sentence, let you forget any, or delete everything after a second confirmation. The public demo also deletes a profile idle for a day.
+- **Your data is yours.** Settings show every learned sentence, let you forget any, or delete everything. The public demo also deletes a profile idle for a day.
 - **Pages:** how to use, about, privacy and terms.
 
 ### Planned, not built
 
 - A card shown through MCP Apps on a real Alexa+ screen. The simulation draws the choices itself.
+- Recognising a returning speaker by voice. Today a profile belongs to a browser session.
+- A trained detector of speech disability from audio. It would need work with clinicians and with people who live with these conditions.
 - Real use by, and design with, people who live with speech disabilities.
 
 ## How it works
@@ -67,10 +65,10 @@ What this means today: the first time something is hard to understand, the assis
 
 Open the live demo at https://alsxa.eziedutech.dev/sim, agree, type or say something unclear such as "ah wan bed", and choose a sentence. To run the checks on your own machine, see [Running locally](#running-locally).
 
-1. `cd mcp && cargo test`: 24 tests (needs `TEST_DATABASE_URL` for 9 of them). 11 unit tests, 4 that compare the ordering rules, the model policy and the estimate with recorded answers, and 9 that run the service against a real database with a scripted stand-in for the model (consent, the question asked once, learning, isolation between people, deleting, retries, the policy, the spending limit). Then `cd mcp/conformance && npm install && npm test`: 8 tests that start the built server and talk to it with the **official MCP TypeScript client**.
+1. `cd mcp && cargo test`: 24 tests (9 of them need `TEST_DATABASE_URL`). Then `cd mcp/conformance && npm install && npm test`: 8 tests that start the built server and talk to it with the **official MCP TypeScript client**.
 2. `cd web && npm run e2e`: 17 browser tests, including automatic accessibility checks (axe-core, WCAG 2.1 A and AA) in every step, one-switch scanning, deleting data, and, when `DEEPGRAM_API_KEY` is set, a fake microphone that plays a synthetic voice through the three recognisers.
 3. `cd mcp && cargo run --bin probe` sends 20 damaged transcripts to the real model through the real code and reports how often its order passed the rules. It spends a little money.
-4. `cd mcp && cargo run --release --bin torgo_eval -- <folder>` and `cargo run --release --bin torgo_clarity -- <folder> <controls folder>` measure the ordering and the estimate on TORGO recordings (see [Results](#results)).
+4. `cd mcp && cargo run --release --bin torgo_eval -- <folder>` and `cargo run --release --bin torgo_clarity -- <folder> <controls folder>` measure the ordering and the estimate on TORGO recordings (see [Results](#results)). `scripts/extract_torgo_subset.py` copies a subset of the recordings into a folder.
 
 ## Architecture
 
@@ -78,8 +76,6 @@ Open the live demo at https://alsxa.eziedutech.dev/sim, agree, type or say somet
 mcp/   Rust MCP server: tools, ranking and policy, learning, Bedrock, spending limit, PostgreSQL
 web/   React Router 8 app: the simulated display, a door to the server for the page, the speech routes
 ```
-
-Choices worth knowing:
 
 - **The model proposes, code decides.** The tool schema lists only the ids that were offered. The checking code (`mcp/src/ranking.rs`) rejects anything else.
 - **No audio is stored.** The web server passes a short recording to Deepgram and keeps nothing. The database holds text only.
@@ -118,7 +114,7 @@ Without a Bedrock key the rules order the sentences. Without a Deepgram key the 
 
 ## Results
 
-Measured, not claimed. Everything below is reproducible with the commands above.
+Every number below can be reproduced with the checks in [How to test](#how-to-test).
 
 ### Tests
 
@@ -131,7 +127,7 @@ Measured, not claimed. Everything below is reproducible with the commands above.
 
 ### The model on damaged transcripts
 
-`mcp/src/bin/probe.rs`, 20 invented transcripts such as "ah wan bed" (meant "I want to go to bed"), real model calls through the real code. Prices used for cost: 0.10 USD per million input tokens and 0.50 per million output tokens, given by the author, not from a price list we could read.
+`mcp/src/bin/probe.rs`: 20 invented transcripts such as "ah wan bed" (meant "I want to go to bed"), real model calls through the real code. Cost is figured with 0.10 USD per million input tokens and 0.50 per million output tokens, as given by the author.
 
 | | |
 |---|---|
@@ -139,15 +135,15 @@ Measured, not claimed. Everything below is reproducible with the commands above.
 | The meant sentence first | 18 of 20 |
 | The meant sentence among the six | 18 of 20 |
 | Median time of a call | 1.5 s |
-| Cost of the 20 calls | about 0.009 USD (21 calls, one was asked again) |
+| Cost of the 20 calls | about 0.009 USD |
 
 These transcripts were written by hand to look like unclear speech. They show that the format, the policy and the ordering work; they say nothing about real speech.
 
 ### Recordings of speakers with dysarthria (TORGO)
 
-TORGO holds recordings of 8 speakers with dysarthria (ALS, cerebral palsy) reading words and sentences. Used here only to measure, on this machine, with the three Deepgram recognisers; no audio is in this repository, and the recordings are not played in the demo video. 80 recordings per speaker, spread over their sessions, 640 in all (499 single words, 141 sentences of two or more words). The ordering below uses the plain rules only, with no language model.
+TORGO holds recordings of speakers with dysarthria (ALS, cerebral palsy) reading words and sentences. Here, 80 recordings from each of 8 speakers (640 in all: 499 single words and 141 sentences of two or more words) were run through the three Deepgram recognisers on a local machine. No audio is in this repository. The ordering below uses the plain rules only, with no language model.
 
-**How good is the order of the six sentences?** Each speaker has a list of their own prompts (a phrase book of 68 to 79 entries) that the correct sentence is always part of, like a personal list of favourite phrases. We check whether the sentence that was really spoken is first.
+**How good is the order of the six sentences?** Each speaker has a list of their own prompts (68 to 79 entries) that always contains the right sentence, like a personal list of favourite phrases. We check whether the sentence that was really spoken is first.
 
 | Recordings | n | Best transcript is exactly right | Right sentence first | Right sentence among the six |
 |---|---|---|---|---|
@@ -157,16 +153,16 @@ TORGO holds recordings of 8 speakers with dysarthria (ALS, cerebral palsy) readi
 | Speaker F01 (hardest) | 80 | 18% | 32% (26/80) | 54% (43/80) |
 | Speaker M03 (easiest) | 80 | 83% | 94% (75/80) | 98% (78/80) |
 
-Offering a list of the person's own sentences raises how often the right sentence is first from 42% (the recogniser's best transcript, exactly right) to 62%, and it helps most for sentences. Speakers differ a lot, and for the speaker whom the recognisers understand least, the right sentence is among the six only 54% of the time. What this does **not** show: these are *closed* lists that already contain the answer, which is much easier than free speech; the "learned" effect is not measured fairly (only 36 recordings repeated a sentence, too few to say anything); and the recordings are read prompts in a lab. Per-speaker numbers are in the table the script prints.
+Offering the person's own sentences raises how often the right one is first from 42% to 62%, and it helps most for sentences. Speakers differ a lot. What this does **not** show: the lists already contain the answer, which is much easier than free speech; the learning effect is not measured (only 36 recordings repeated a sentence); and the recordings are read prompts in a lab.
 
-**When would the question be asked?** The same recordings, plus recordings from 7 TORGO speakers without dysarthria (280 recordings), through the estimate described above.
+**When would the question be asked?** The same recordings, plus 280 recordings from 7 TORGO speakers without dysarthria, through the estimate.
 
 | Recordings | n | Would be asked | Low confidence | Recognisers disagree |
 |---|---|---|---|---|
 | Speakers with dysarthria | 320 | 73% (232/320) | 48% | 50% |
 | Speakers without dysarthria | 280 | 36% (100/280) | 17% | 25% |
 
-The estimate does tell the groups apart: about twice as many recordings from speakers with dysarthria look unclear. But it is a weak signal for a person's first sentences: all 8 speakers with dysarthria would have been asked within their first 3 recordings, and so would 6 of the 7 speakers without it (most of the recordings are single words, which recognisers find hard for anyone). That is acceptable only because the question is asked once, costs one tap, and "No" leaves the assistant as usual; it would not be acceptable as a diagnosis, and it is not used as one. A better trigger (several unclear sentences in a row, or a trained model) is future work. Reproduce with `mcp/scripts/torgo-eval.ts` and `mcp/scripts/torgo-clarity.ts` after copying a subset with `scripts/extract_torgo_subset.py`.
+The estimate tells the groups apart: about twice as many recordings from speakers with dysarthria look unclear. For a single person's first sentences it is a weak signal: all 8 speakers with dysarthria would have been asked within their first 3 recordings, and so would 6 of the 7 without it (most recordings are single words, which recognisers find hard for anyone). That is acceptable only because the question is asked once, costs one tap, and "No" leaves the assistant as usual. It is not a diagnosis. A better trigger, such as several unclear sentences in a row, is future work.
 
 ## What it does not claim
 
@@ -186,7 +182,7 @@ The estimate does tell the groups apart: about twice as many recordings from spe
 
 ## How this was built
 
-Claude Code with Claude Sonnet 5.5 on Amazon Bedrock was used as a Code Assistant to accelerate development and debugging, under the direction and review of the author. The numbers in this README come from the commands above. Problems met on the way are in [FRICTION-LOG.md](FRICTION-LOG.md).
+Claude Code with Claude Sonnet 5.5 on Amazon Bedrock was used as a Code Assistant to accelerate development and debugging, under the direction and review of the author. Problems met on the way are in [FRICTION-LOG.md](FRICTION-LOG.md).
 
 ## License
 
