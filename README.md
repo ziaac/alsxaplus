@@ -63,13 +63,25 @@ ALSxaPlus does four things:
 
 ## How to test
 
-Open the live demo at https://alsxa.eziedutech.dev/sim, agree, type or say something unclear such as "ah wan bed", and choose a sentence. To run the checks on your own machine, see [Running locally](#running-locally).
+Open the live demo at https://alsxa.eziedutech.dev/sim, agree, type or say something unclear such as "ah wan bed", and choose a sentence.
 
-1. `cd mcp && cargo test`: 24 tests. Nine of them use a real PostgreSQL database and are skipped unless `TEST_DATABASE_URL` is set.
-2. `cd mcp && cargo build && cd conformance && npm install && npm test`: 8 tests that start the built server against the same database (`TEST_DATABASE_URL`) and talk to it with the **official MCP TypeScript client**.
-3. `cd web && npm run e2e`: 17 browser tests, including automatic accessibility checks (axe-core, WCAG 2.1 A and AA) in every step, one-switch scanning, deleting data, and, when `DEEPGRAM_API_KEY` is set, a fake microphone that plays a synthetic voice through the three recognisers.
-4. `cd mcp && cargo run --bin probe` sends 20 damaged transcripts to the real model through the real code and reports how often its order passed the rules. It spends a little money.
-5. `cd mcp && cargo run --release --bin torgo_eval -- <folder>` and `cargo run --release --bin torgo_clarity -- <folder> <controls folder>` measure the ordering and the estimate on TORGO recordings (see [Results](#results)). `scripts/extract_torgo_subset.py` copies a subset of the recordings into a folder.
+To run the tests on your own machine (see [Running locally](#running-locally) first):
+
+```bash
+cd mcp && cargo test                                         # database tests need TEST_DATABASE_URL
+cd mcp && cargo build && cd conformance && npm install && npm test   # checks with the official MCP client
+cd web && npm run e2e                                        # browser and accessibility tests
+```
+
+To repeat the measurements in [Results](#results):
+
+```bash
+cd mcp && cargo run --bin probe                              # real model calls, spends a little money
+cd mcp && cargo run --release --bin torgo_eval -- <folder>   # ordering on TORGO recordings
+cd mcp && cargo run --release --bin torgo_clarity -- <folder> <controls folder>
+```
+
+`scripts/extract_torgo_subset.py` copies a subset of the TORGO recordings into a folder.
 
 ## Architecture
 
@@ -121,10 +133,10 @@ Every number below can be reproduced with the checks in [How to test](#how-to-te
 
 | Suite | Result |
 |---|---|
-| Rust unit tests, and the ordering rules, model policy and estimate compared with recorded answers | 15 passed |
-| Rust service against PostgreSQL with a scripted model (consent, clear speech not questioned, the question asked once, learning, isolation between people, deleting, an empty model answer asked again, a policy violation, a failing model, the spending limit) | 9 passed |
-| The built server through the official MCP TypeScript client against PostgreSQL (protocol version, tool list, learning, deleting, no consent or delete tool, 401 and host checks) | 8 passed |
-| Browser tests in Chromium (consent gate, question once, choosing by key, learning, typing, one-switch scanning, deleting, copying the conversation, phone-sized screen, accessibility in every step, voice with a fake microphone) | 17 passed |
+| Rust unit tests and the ordering rules, policy and estimate against recorded answers | 15 passed |
+| Rust service against PostgreSQL with a scripted model | 9 passed |
+| The built server through the official MCP TypeScript client | 8 passed |
+| Browser tests in Chromium, with accessibility checks in every step | 17 passed |
 
 ### The model on damaged transcripts
 
