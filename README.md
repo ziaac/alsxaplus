@@ -65,10 +65,11 @@ ALSxaPlus does four things:
 
 Open the live demo at https://alsxa.eziedutech.dev/sim, agree, type or say something unclear such as "ah wan bed", and choose a sentence. To run the checks on your own machine, see [Running locally](#running-locally).
 
-1. `cd mcp && cargo test`: 24 tests (9 of them need `TEST_DATABASE_URL`). Then `cd mcp/conformance && npm install && npm test`: 8 tests that start the built server and talk to it with the **official MCP TypeScript client**.
-2. `cd web && npm run e2e`: 17 browser tests, including automatic accessibility checks (axe-core, WCAG 2.1 A and AA) in every step, one-switch scanning, deleting data, and, when `DEEPGRAM_API_KEY` is set, a fake microphone that plays a synthetic voice through the three recognisers.
-3. `cd mcp && cargo run --bin probe` sends 20 damaged transcripts to the real model through the real code and reports how often its order passed the rules. It spends a little money.
-4. `cd mcp && cargo run --release --bin torgo_eval -- <folder>` and `cargo run --release --bin torgo_clarity -- <folder> <controls folder>` measure the ordering and the estimate on TORGO recordings (see [Results](#results)). `scripts/extract_torgo_subset.py` copies a subset of the recordings into a folder.
+1. `cd mcp && cargo test`: 24 tests. Nine of them use a real PostgreSQL database and are skipped unless `TEST_DATABASE_URL` is set.
+2. `cd mcp && cargo build && cd conformance && npm install && npm test`: 8 tests that start the built server against the same database (`TEST_DATABASE_URL`) and talk to it with the **official MCP TypeScript client**.
+3. `cd web && npm run e2e`: 17 browser tests, including automatic accessibility checks (axe-core, WCAG 2.1 A and AA) in every step, one-switch scanning, deleting data, and, when `DEEPGRAM_API_KEY` is set, a fake microphone that plays a synthetic voice through the three recognisers.
+4. `cd mcp && cargo run --bin probe` sends 20 damaged transcripts to the real model through the real code and reports how often its order passed the rules. It spends a little money.
+5. `cd mcp && cargo run --release --bin torgo_eval -- <folder>` and `cargo run --release --bin torgo_clarity -- <folder> <controls folder>` measure the ordering and the estimate on TORGO recordings (see [Results](#results)). `scripts/extract_torgo_subset.py` copies a subset of the recordings into a folder.
 
 ## Architecture
 
