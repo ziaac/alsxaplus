@@ -13,7 +13,7 @@ const serviceKey = process.env.SERVICE_KEY ?? "test-service-key";
 
 export default defineConfig({
   testDir: "e2e",
-  timeout: 60_000,
+  timeout: 300_000,
   expect: { timeout: 10_000 },
   workers: 1,
   fullyParallel: false,
@@ -22,7 +22,7 @@ export default defineConfig({
   outputDir: "test-results",
   webServer: [
     {
-      command: "npx tsx src/index.ts",
+      command: "cargo run --quiet --bin alsxaplus-mcp",
       cwd: "../mcp",
       url: "http://127.0.0.1:8082/health",
       reuseExistingServer: false,

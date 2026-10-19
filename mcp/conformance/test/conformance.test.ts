@@ -1,42 +1,55 @@
-// The server through the official MCP TypeScript client, against a real database. Runs when TEST_DATABASE_URL is set
-// (mcp/.env has it for local work). The model is not configured here, so the rules rank the suggestions.
+// The server through the official MCP TypeScript client, against a real database. It starts the compiled server
+// (cargo build first), so what is checked is the program that is deployed. Runs when TEST_DATABASE_URL is set
+// (mcp/.env has it for local work). The model is not configured here, so the rules order the suggestions.
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { request as httpRequest, type Server } from "node:http";
-import type { AddressInfo } from "node:net";
+import { type ChildProcess, spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { request as httpRequest } from "node:http";
+import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { buildApp } from "../src/app.js";
-import type { Config } from "../src/config.js";
-import { connect, type Db, migrate } from "../src/db.js";
 
 try {
-  process.loadEnvFile(new URL("../.env", import.meta.url));
+  process.loadEnvFile(new URL("../../.env", import.meta.url));
 } catch {
   // the variables may come from the environment
 }
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const SERVICE_KEY = "test-service-key-0123456789";
+const exe = process.platform === "win32" ? "alsxaplus-mcp.exe" : "alsxaplus-mcp";
+const binary = process.env.SERVER_BIN ?? fileURLToPath(new URL(`../../target/debug/${exe}`, import.meta.url));
 
 describe.skipIf(!databaseUrl)("through the official MCP client", () => {
-  let db: Db;
-  let server: Server;
+  let child: ChildProcess;
   let base: string;
   const tokens: string[] = [];
 
   beforeAll(async () => {
-    db = connect(databaseUrl!);
-    await migrate(db);
-    const config: Config = { databaseUrl: databaseUrl!, port: 0, serviceKey: SERVICE_KEY, profileTtlHours: 24, allowedHosts: ["localhost", "127.0.0.1", "::1"], bedrock: null };
-    server = buildApp({ db, config }).listen(0);
-    await new Promise((r) => server.once("listening", r));
-    base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-  });
+    if (!existsSync(binary)) throw new Error(`the server is not built: ${binary} (run cargo build in mcp)`);
+    const port = 20000 + Math.floor(Math.random() * 20000);
+    base = `http://127.0.0.1:${port}`;
+    // The working directory is empty on purpose, so no .env file is picked up by the server.
+    child = spawn(binary, [], {
+      cwd: tmpdir(),
+      env: { PATH: process.env.PATH ?? "", DATABASE_URL: databaseUrl!, PORT: String(port), SERVICE_KEY, AWS_BEARER_TOKEN_BEDROCK: "", RUST_LOG: "warn" },
+      stdio: ["ignore", "inherit", "inherit"],
+    });
+    for (let i = 0; i < 100; i++) {
+      try {
+        if ((await fetch(`${base}/health`)).ok) return;
+      } catch {
+        // not listening yet
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    throw new Error("the server did not start in ten seconds");
+  }, 30_000);
 
   afterAll(async () => {
-    for (const t of tokens) await fetch(`${base}/api/me`, { method: "DELETE", headers: { authorization: `Bearer ${t}` } });
-    await new Promise((r) => server.close(r));
-    await db.end();
+    for (const t of tokens) await fetch(`${base}/api/me`, { method: "DELETE", headers: { authorization: `Bearer ${t}` } }).catch(() => undefined);
+    child?.kill();
   });
 
   async function openProfile(): Promise<string> {
@@ -49,7 +62,7 @@ describe.skipIf(!databaseUrl)("through the official MCP client", () => {
 
   async function connectClient(token: string): Promise<{ client: Client; transport: StreamableHTTPClientTransport }> {
     const transport = new StreamableHTTPClientTransport(new URL(`${base}/mcp`), { requestInit: { headers: { authorization: `Bearer ${token}` } } });
-    const client = new Client({ name: "integration-test", version: "1.0.0" });
+    const client = new Client({ name: "conformance-test", version: "1.0.0" });
     await client.connect(transport);
     return { client, transport };
   }

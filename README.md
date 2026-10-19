@@ -4,6 +4,7 @@
 >
 > It offers help for today and for the years ahead. Today, a person who is already hard to understand gets choices instead of "Sorry, I didn't get that". Later, as a condition such as ALS progresses and speech changes, the same profile keeps learning from every sentence the person confirms, so the help follows the voice as it changes instead of needing to be set up again. The choices can also be made by touch, keys or a single switch, so the help does not depend on speech at all when speech is no longer possible.
 
+![Rust 1.99](https://img.shields.io/badge/Rust-1.99-B7410E)
 ![Node.js 24](https://img.shields.io/badge/Node.js-24-5FA04E)
 ![React Router 8.4](https://img.shields.io/badge/React%20Router-8.4-CA4245)
 ![PostgreSQL 18](https://img.shields.io/badge/PostgreSQL-18-336791)
@@ -44,7 +45,7 @@ What this means today: the first time something is hard to understand, the assis
 
 ### Built today
 
-- **An MCP server** (official TypeScript SDK, protocol 2025-11-25, Streamable HTTP) with five tools: `get_status`, `set_speech_support`, `suggest_meanings`, `confirm_meaning`, `list_my_phrases`. Consent and deleting data are *not* tools: a voice assistant must never be able to agree for someone or erase their data. They are buttons for the person.
+- **An MCP server** written in Rust (the official `rmcp` SDK, protocol 2025-11-25, Streamable HTTP) with five tools: `get_status`, `set_speech_support`, `suggest_meanings`, `confirm_meaning`, `list_my_phrases`. Consent and deleting data are *not* tools: a voice assistant must never be able to agree for someone or erase their data. They are buttons for the person.
 - **An ordering that a model proposes and code checks.** Claude Haiku on Amazon Bedrock may order the candidate sentences. Only an answer that passes the rules is used: ids that were offered, no repeats, and at most two "corrections" that stay within half of the letters of what was heard, are short plain text, and use only words that already appear in the candidates or in what was heard. If the model is missing, over budget, empty or breaks a rule, plain rules (letter and consonant similarity, plus what was learned) order the sentences, and the stored record says which one decided and why.
 - **Per-person learning.** What a person confirmed, and the sounds that went with it, are stored per profile and ranked first the next time.
 - **Three recognisers for one phrase.** Deepgram's Nova-3, Nova-2 and base models listen to the same recording and write it down differently. All the distinct guesses are used as evidence.
@@ -66,32 +67,32 @@ What this means today: the first time something is hard to understand, the assis
 
 Open the live demo at https://alsxa.eziedutech.dev/sim, agree, type or say something unclear such as "ah wan bed", and choose a sentence. To run the checks on your own machine, see [Running locally](#running-locally).
 
-1. `cd mcp && npm test`: 31 tests, 23 of the ordering rules, the estimate and the model policy, 8 through the **official MCP client** against a real database (needs `TEST_DATABASE_URL`).
+1. `cd mcp && cargo test`: 24 tests (needs `TEST_DATABASE_URL` for 9 of them). 11 unit tests, 4 that compare the ordering rules, the model policy and the estimate with recorded answers, and 9 that run the service against a real database with a scripted stand-in for the model (consent, the question asked once, learning, isolation between people, deleting, retries, the policy, the spending limit). Then `cd mcp/conformance && npm install && npm test`: 8 tests that start the built server and talk to it with the **official MCP TypeScript client**.
 2. `cd web && npm run e2e`: 17 browser tests, including automatic accessibility checks (axe-core, WCAG 2.1 A and AA) in every step, one-switch scanning, deleting data, and, when `DEEPGRAM_API_KEY` is set, a fake microphone that plays a synthetic voice through the three recognisers.
-3. `cd mcp && npx tsx scripts/probe.ts` sends 20 damaged transcripts to the real model through the real code and reports how often its order passed the rules. It spends a little money.
-4. `cd mcp && npx tsx scripts/torgo-eval.ts <folder>` and `npx tsx scripts/torgo-clarity.ts <folder> <controls folder>` measure the ordering and the estimate on TORGO recordings (see [Results](#results)).
+3. `cd mcp && cargo run --bin probe` sends 20 damaged transcripts to the real model through the real code and reports how often its order passed the rules. It spends a little money.
+4. `cd mcp && cargo run --release --bin torgo_eval -- <folder>` and `cargo run --release --bin torgo_clarity -- <folder> <controls folder>` measure the ordering and the estimate on TORGO recordings (see [Results](#results)).
 
 ## Architecture
 
 ```
-mcp/   Node.js MCP server: tools, ranking and policy, learning, Bedrock, spending limit, PostgreSQL
+mcp/   Rust MCP server: tools, ranking and policy, learning, Bedrock, spending limit, PostgreSQL
 web/   React Router 8 app: the simulated display, a door to the server for the page, the speech routes
 ```
 
 Choices worth knowing:
 
-- **The model proposes, code decides.** The tool schema lists only the ids that were offered. The checking code (`mcp/src/ranking.ts`) rejects anything else.
+- **The model proposes, code decides.** The tool schema lists only the ids that were offered. The checking code (`mcp/src/ranking.rs`) rejects anything else.
 - **No audio is stored.** The web server passes a short recording to Deepgram and keeps nothing. The database holds text only.
 - **Each person has their own profile**, opened by the web app and held in an httpOnly cookie. A token opens one profile, and a tool can only see that profile's data.
 - **Settings come from the environment.** Model id, region, prices and the monthly limit are variables, never code.
 
 ## Running locally
 
-Requires Node.js 24 (22.22 or newer works), PostgreSQL 18, and optionally a Deepgram key and a Bedrock key.
+Requires Rust 1.99, Node.js 24 (22.22 or newer works) for the web app, PostgreSQL 18, and optionally a Deepgram key and a Bedrock key.
 
 ```bash
-cd mcp && npm install && cp .env.example .env   # fill in DATABASE_URL and SERVICE_KEY
-npm run dev                                     # the MCP server on port 8081
+cd mcp && cp .env.example .env                  # fill in DATABASE_URL and SERVICE_KEY
+cargo run --bin alsxaplus-mcp                   # the MCP server on port 8081
 ```
 
 ```bash
@@ -123,21 +124,22 @@ Measured, not claimed. Everything below is reproducible with the commands above.
 
 | Suite | Result |
 |---|---|
-| Ordering rules, the clarity estimate, model policy and text helpers | 23 passed |
-| MCP server through the official TypeScript client against PostgreSQL (consent, clear speech not questioned, the question asked once, learning, isolation between people, deleting, no consent or delete tool, 401 and host checks) | 8 passed |
+| Rust unit tests, and the ordering rules, model policy and estimate compared with recorded answers | 15 passed |
+| Rust service against PostgreSQL with a scripted model (consent, clear speech not questioned, the question asked once, learning, isolation between people, deleting, an empty model answer asked again, a policy violation, a failing model, the spending limit) | 9 passed |
+| The built server through the official MCP TypeScript client against PostgreSQL (protocol version, tool list, learning, deleting, no consent or delete tool, 401 and host checks) | 8 passed |
 | Browser tests in Chromium (consent gate, question once, choosing by key, learning, typing, one-switch scanning, deleting, copying the conversation, phone-sized screen, accessibility in every step, voice with a fake microphone) | 17 passed |
 
 ### The model on damaged transcripts
 
-`mcp/scripts/probe.ts`, 20 invented transcripts such as "ah wan bed" (meant "I want to go to bed"), real model calls through the real code. Prices used for cost: 0.10 USD per million input tokens and 0.50 per million output tokens, given by the author, not from a price list we could read.
+`mcp/src/bin/probe.rs`, 20 invented transcripts such as "ah wan bed" (meant "I want to go to bed"), real model calls through the real code. Prices used for cost: 0.10 USD per million input tokens and 0.50 per million output tokens, given by the author, not from a price list we could read.
 
 | | |
 |---|---|
 | Model order used (it passed the rules) | 19 of 20 (the other one was replaced by the rules) |
-| The meant sentence first | 17 of 20 |
+| The meant sentence first | 18 of 20 |
 | The meant sentence among the six | 18 of 20 |
-| Median time of a call | 1.6 s |
-| Cost of the 20 calls | about 0.011 USD |
+| Median time of a call | 1.5 s |
+| Cost of the 20 calls | about 0.009 USD (21 calls, one was asked again) |
 
 These transcripts were written by hand to look like unclear speech. They show that the format, the policy and the ordering work; they say nothing about real speech.
 
@@ -152,7 +154,7 @@ TORGO holds recordings of 8 speakers with dysarthria (ALS, cerebral palsy) readi
 | All | 640 | 42% (268/640) | 62% (399/640) | 75% (481/640) |
 | One word | 499 | 44% | 55% (273/499) | 70% (348/499) |
 | Two or more words | 141 | 33% (47/141) | 89% (126/141) | 94% (133/141) |
-| Speaker F01 (hardest) | 80 | 18% | 33% (26/80) | 54% (43/80) |
+| Speaker F01 (hardest) | 80 | 18% | 32% (26/80) | 54% (43/80) |
 | Speaker M03 (easiest) | 80 | 83% | 94% (75/80) | 98% (78/80) |
 
 Offering a list of the person's own sentences raises how often the right sentence is first from 42% (the recogniser's best transcript, exactly right) to 62%, and it helps most for sentences. Speakers differ a lot, and for the speaker whom the recognisers understand least, the right sentence is among the six only 54% of the time. What this does **not** show: these are *closed* lists that already contain the answer, which is much easier than free speech; the "learned" effect is not measured fairly (only 36 recordings repeated a sentence, too few to say anything); and the recordings are read prompts in a lab. Per-speaker numbers are in the table the script prints.
@@ -180,11 +182,11 @@ The estimate does tell the groups apart: about twice as many recordings from spe
 - **Amazon Bedrock** (Converse API, Claude Haiku 5.5 from Anthropic) to order the sentences.
 - **Deepgram** (Nova-3, Nova-2, base, and Aura 2) for speech to text and text to speech.
 - **TORGO database** (University of Toronto), free for academic and non-profit use, cited as: Rudzicz, F., Namasivayam, A. K., and Wolff, T. (2012). The TORGO database of acoustic and articulatory speech from speakers with dysarthria. Language Resources and Evaluation, 46(4). The recordings are not part of this repository.
-- **Model Context Protocol** TypeScript SDK, **Express**, **pg**, **zod** (MIT); **React**, **React Router**, **Vite**, **Playwright**, **axe-core** (MIT or MPL-2.0); **PostgreSQL**.
+- **rmcp** (the Rust MCP SDK), **axum**, **sqlx**, **tokio**, **reqwest** (MIT or Apache-2.0); the official MCP TypeScript SDK (MIT) for the conformance tests; **React**, **React Router**, **Vite**, **Playwright**, **axe-core** (MIT or MPL-2.0); **PostgreSQL**.
 
 ## How this was built
 
-A coding assistant was used as a Code Assistant to accelerate development and debugging, under the direction and review of the author. The numbers in this README come from the commands above. Problems met on the way are in [FRICTION-LOG.md](FRICTION-LOG.md).
+Claude Code with Claude Sonnet 5.5 on Amazon Bedrock was used as a Code Assistant to accelerate development and debugging, under the direction and review of the author. The numbers in this README come from the commands above. Problems met on the way are in [FRICTION-LOG.md](FRICTION-LOG.md).
 
 ## License
 

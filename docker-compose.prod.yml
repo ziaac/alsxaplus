@@ -41,7 +41,7 @@ services:
       BEDROCK_PRICE_INPUT_USD_PER_MTOK: ${BEDROCK_PRICE_INPUT_USD_PER_MTOK:-}
       BEDROCK_PRICE_OUTPUT_USD_PER_MTOK: ${BEDROCK_PRICE_OUTPUT_USD_PER_MTOK:-}
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: ["CMD", "alsxaplus-mcp", "healthcheck"]
       interval: 10s
       timeout: 3s
       retries: 12

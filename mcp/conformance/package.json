@@ -1,0 +1,18 @@
+{
+  "name": "alsxaplus-conformance",
+  "private": true,
+  "type": "module",
+  "description": "Checks the ALSxaPlus MCP server with the official MCP TypeScript client, against a real database",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  },
+  "engines": {
+    "node": ">=22.22.0"
+  }
+}

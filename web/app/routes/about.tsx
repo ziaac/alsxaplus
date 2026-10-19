@@ -69,8 +69,8 @@ export default function About() {
       <section className="card" aria-labelledby="built">
         <h2 id="built">How it was built</h2>
         <p>
-          Made for the Amazon Developer Hackathon 2026 (Alexa+ track, with Amazon Bedrock for the AWS Builder challenge). The server is an MCP server (protocol 2025-11-25, Streamable HTTP, official TypeScript SDK) with
-          tools to suggest and confirm meanings; the page is a web simulation of a smart display that calls it. Speech is turned into text and back by Deepgram. A coding assistant (Code Assistant) was used to speed up
+          Made for the Amazon Developer Hackathon 2026 (Alexa+ track, with Amazon Bedrock for the AWS Builder challenge). The server is an MCP server written in Rust (protocol 2025-11-25, Streamable HTTP, the official rmcp SDK) with
+          tools to suggest and confirm meanings; the page is a web simulation of a smart display that calls it. Speech is turned into text and back by Deepgram. Claude Code with Claude Sonnet 5.5 on Amazon Bedrock was used as a Code Assistant to speed up
           development and debugging, under the author's direction and review. The source code is open under the MIT license.
         </p>
       </section>
