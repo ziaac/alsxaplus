@@ -41,3 +41,13 @@ Notes taken while building ALSxaPlus for the Amazon Developer Hackathon 2026, in
 - Severity: high for accessibility use cases.
 - Workaround: the simulation does its own recognition (three Deepgram models) and passes every alternative to the server's `suggest_meanings` tool, which a real Alexa+ model could do if it were allowed to pass the n-best list.
 - Suggestion: let a tool declare that it wants the speech recogniser's n-best list, with confidences, for the utterance that triggered it.
+
+## F5. The Rust MCP SDK rejects a tool call that comes without a handshake, and the switch for it is named "legacy session mode"
+
+- Task: serve the MCP tools from Rust with `rmcp` 3.5.1, without keeping a session, because every request carries its own bearer token.
+- Steps: built the Streamable HTTP service with the default configuration, then called `tools/call` directly, as the web simulation does.
+- Expected: a stateless server answers the call, as the TypeScript SDK's stateless mode does.
+- Actual: HTTP 422, "Unexpected message, expect initialize request". The default keeps a session per client, and nothing in the error says how to turn that off.
+- Severity: low once known, but it cost a test run.
+- Workaround: `StreamableHttpServerConfig::default().with_legacy_session_mode(false)`. The server then answers direct calls and still completes the normal handshake for the official client (checked with the official TypeScript client).
+- Suggestion: name the stateless option `stateless` in the docs and the builder, and mention it in the error text.
